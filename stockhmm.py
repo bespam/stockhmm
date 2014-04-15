@@ -17,7 +17,7 @@ date1 = datetime.date(2008, 1, 1)  # start date
 date2 = datetime.date(2014, 1, 14)  # end date
 # get quotes from yahoo finance
 quotes1 = quotes_historical_yahoo("JPM", date1, date2)
-quotes2 = quotes_historical_yahoo("GLD", date1, date2)
+quotes2 = quotes_historical_yahoo("WFC", date1, date2)
 print(len(quotes1))
 if len(quotes1) == 0 or len(quotes1) != len(quotes2):
     raise SystemExit
@@ -59,6 +59,24 @@ hidden_states2 = model2.predict(X2)
 
 print("done\n")
 
+# calculate similarity measure
+states1 = range(n_components)
+states2 = list(itertools.permutations(states1))
+print(states1)
+print(len(states2))
+sims = []
+for i in range(len(states2)):
+    sim = 0
+    for j in range(len(hidden_states1)):
+        sim += hidden_states1[j] == states2[i][hidden_states2[j]]
+        #pdb.set_trace()
+    sims.append(float(sim)/len(hidden_states1))
+
+similarity = max(sims)    
+print(["similarity: ", similarity])
+m_ind = sims.index(similarity)
+st = states2[m_ind]
+
 ###############################################################################
 # print trained parameters and plot
 print("Transition matrix")
@@ -77,17 +95,21 @@ months = MonthLocator()  # every month
 yearsFmt = DateFormatter('%Y')
 fig = pl.figure()
 ax = fig.add_subplot(111)
+colors = ['r','b','g','m','k']
 
 for i in range(n_components):
     # use fancy indexing to plot data in each state
     idx = (hidden_states1 == i)
-    ax.plot_date(dates[idx], close_v1[idx], 'o', label="%dth hidden state" % i)
+    ax.plot_date(dates[idx], close_v1[idx], 'o', label="%dth hidden state" % i, color = colors[i])
 ax.legend(loc=2)
+
+#used_colors = ax._get_lines.color_cycle
+#pdb.set_trace()
 
 for i in range(n_components):
     # use fancy indexing to plot data in each state
-    idx = (hidden_states2 == i)
-    ax.plot_date(dates[idx], close_v2[idx], 'o', label="%dth hidden state" % i)
+    idx = (hidden_states2 == st[i])
+    ax.plot_date(dates[idx], close_v2[idx], 'o', label="%dth hidden state" % i, color = colors[i])
 
 
 # format the ticks
@@ -104,21 +126,8 @@ ax.grid(True)
 fig.autofmt_xdate()
 pl.show()
 
-# calculate similarity measure
-states1 = range(n_components)
-states2 = list(itertools.permutations(states1))
-print(states1)
-print(len(states2))
-sims = []
-for i in range(len(states2)):
-    sim = 0
-    for j in range(len(hidden_states1)):
-        sim += hidden_states1[j] == states2[i][hidden_states2[j]]
-        #pdb.set_trace()
-    sims.append(float(sim)/len(hidden_states1))
-print(sims)
-print(max(sims))
 
-pl.plot(range(len(sims)),sims)
-pl.show()
+
+#pl.plot(range(len(sims)),sims)
+#pl.show()
 
